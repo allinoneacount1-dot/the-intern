@@ -1,21 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { INCIDENTS, MANAGER_MESSAGES, COFFEE_LEVELS } from "@/lib/lore";
 import { StatusRail } from "@/components/status-rail";
 import { MarketControls } from "@/components/market-controls";
 import { ManagerInbox } from "@/components/manager-inbox";
 import { CoffeeStatus } from "@/components/coffee-status";
-import { gsap } from "gsap";
 
 export default function DeskPage() {
-  const [loaded, setLoaded] = useState(false);
-  const [coffeeLevel, setCoffeeLevel] = useState(81);
-
-  useEffect(() => {
-    setLoaded(true);
-  }, []);
+  const coffeeLevel = 81;
 
   const coffeeStatus =
     COFFEE_LEVELS.find((c) => coffeeLevel >= c.level) ?? COFFEE_LEVELS[COFFEE_LEVELS.length - 1];
