@@ -1,33 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { INCIDENTS, MANAGER_MESSAGES, COFFEE_LEVELS } from "@/lib/lore";
 import { StatusRail } from "@/components/status-rail";
 import { MarketControls } from "@/components/market-controls";
 import { ManagerInbox } from "@/components/manager-inbox";
 import { CoffeeStatus } from "@/components/coffee-status";
-import { gsap } from "gsap";
+
+const COFFEE_LEVEL = 81;
 
 export default function DeskPage() {
-  const [loaded, setLoaded] = useState(false);
-  const [coffeeLevel, setCoffeeLevel] = useState(81);
-
-  useEffect(() => {
-    setLoaded(true);
-  }, []);
-
   const coffeeStatus =
-    COFFEE_LEVELS.find((c) => coffeeLevel >= c.level) ?? COFFEE_LEVELS[COFFEE_LEVELS.length - 1];
+    COFFEE_LEVELS.find((c) => COFFEE_LEVEL >= c.level) ?? COFFEE_LEVELS[COFFEE_LEVELS.length - 1];
 
   return (
     <main className="h-screen flex flex-col overflow-hidden">
-      {/* TOP STATUS RAIL — 7% */}
-      <StatusRail incidentCount={INCIDENTS.length} coffeeLevel={coffeeLevel} />
-
-      {/* MAIN WORKSTATION GRID */}
+      <StatusRail incidentCount={INCIDENTS.length} coffeeLevel={COFFEE_LEVEL} />
       <div className="flex-1 grid grid-cols-[220px_1fr_260px] lg:grid-cols-[260px_1fr_300px] border-t border-[var(--line)] min-h-0">
-        {/* LEFT NAVIGATION — 17% */}
         <nav className="border-r border-[var(--line)] p-4 overflow-y-auto hidden md:block">
           <div className="space-y-6">
             <div>
@@ -54,8 +43,6 @@ export default function DeskPage() {
             </div>
           </div>
         </nav>
-
-        {/* CENTER — MARKET CONTROL PANEL — 56% */}
         <div className="p-4 lg:p-6 overflow-y-auto">
           <div className="border border-[var(--line)] bg-[var(--ink)] p-6 lg:p-8">
             <div className="flex items-center justify-between mb-6">
@@ -72,11 +59,8 @@ export default function DeskPage() {
                 <div>SHIFT: ONGOING</div>
               </div>
             </div>
-
             <MarketControls />
           </div>
-
-          {/* INCIDENT STRIP */}
           <div className="mt-4 border border-[var(--line)] bg-[var(--ink)] p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -91,15 +75,11 @@ export default function DeskPage() {
             </div>
           </div>
         </div>
-
-        {/* RIGHT — OPERATIONAL CONTEXT — 20% */}
         <aside className="border-l border-[var(--line)] p-4 space-y-4 overflow-y-auto hidden lg:block">
-          <CoffeeStatus level={coffeeLevel} status={coffeeStatus} />
+          <CoffeeStatus level={COFFEE_LEVEL} status={coffeeStatus} />
           <ManagerInbox messages={MANAGER_MESSAGES.slice(0, 5)} />
         </aside>
       </div>
-
-      {/* MOBILE BOTTOM NAV */}
       <div className="md:hidden border-t border-[var(--line)] flex">
         <MobileNavItem href="/" label="DESK" active />
         <MobileNavItem href="/incidents" label="LOG" />
