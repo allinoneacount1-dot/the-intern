@@ -46,12 +46,20 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
   );
   const [cursor, setCursor] = useState(true);
   const container = useRef<HTMLDivElement>(null);
+  const hasRun = useRef(false);
 
+  // Reduced-motion: skip animation, complete after short delay
   useEffect(() => {
     if (isReducedMotion()) {
       gsap.delayedCall(0.4, onComplete);
-      return;
     }
+  }, [visible, onComplete]);
+
+  // Normal animation
+  useEffect(() => {
+    if (visible === BOOT_LINES.length) return;
+    if (hasRun.current) return;
+    hasRun.current = true;
 
     const tl = gsap.timeline();
 
@@ -72,12 +80,10 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
 
     tl.call(() => gsap.delayedCall(0.6, onComplete), [], "-=0.2");
 
-    const blink = setInterval(() => setCursor((c) => !c), 530);
     return () => {
       tl.kill();
-      clearInterval(blink);
     };
-  }, [onComplete]);
+  }, [visible, onComplete]);
 
   return (
     <div
