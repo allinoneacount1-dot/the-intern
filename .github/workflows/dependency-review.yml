@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: Failure-path test (harmless block)
+        run: echo "P2 failure-path test — deliberate block" && exit 1
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
