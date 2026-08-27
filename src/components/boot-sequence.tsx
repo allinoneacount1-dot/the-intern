@@ -38,7 +38,6 @@ const BOOT_LINES = [
 
 export function BootSequence({ onComplete }: { onComplete: () => void }) {
   const [visible, setVisible] = useState(0);
-  const [cursor] = useState(true);
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
