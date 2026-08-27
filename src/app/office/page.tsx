@@ -20,52 +20,21 @@ export default function OfficePage() {
   return (
     <main className="min-h-screen">
       <header className="border-b border-[var(--line)] bg-[var(--ink)] px-4 lg:px-8 py-3 flex items-center justify-between">
-        <Link href="/" className="mono text-[9px] tracking-[0.2em] text-[var(--dim)] hover:text-[var(--bone)]">
-          ← RETURN TO DESK
-        </Link>
-        <span className="mono text-[9px] tracking-[0.2em] text-[var(--dim)]">
-          MCS/87 · DIRECTORY
-        </span>
+        <Link href="/" className="mono text-[9px] tracking-[0.2em] text-[var(--paper-dark)] hover:text-[var(--paper)]">← RETURN TO DESK</Link>
+        <span className="mono text-[9px] tracking-[0.2em] text-[var(--paper-dark)]">MCS/87 · DIRECTORY</span>
       </header>
-
       <div className="mx-auto max-w-[1000px] px-4 lg:px-8 py-8">
         <div className="border-b border-[var(--line)] pb-6">
-          <h1 className="font-condensed text-[36px] lg:text-[48px] tracking-[-0.02em] leading-none">
-            OFFICE DIRECTORY
-          </h1>
-          <p className="mono text-[9px] text-[var(--dim)] mt-2">
-            TOTAL EMPLOYEES: UNKNOWN
-          </p>
+          <h1 className="font-condensed text-[36px] lg:text-[48px] tracking-[-0.02em] leading-none">OFFICE DIRECTORY</h1>
+          <p className="mono text-[9px] text-[var(--paper-dark)] mt-2">TOTAL EMPLOYEES: UNKNOWN</p>
         </div>
-
         <div className="mt-8 border border-[var(--line)]">
           {DEPARTMENTS.map((dept, i) => (
-            <div
-              key={dept.name}
-              className={`flex items-center justify-between px-4 py-3 ${
-                i < DEPARTMENTS.length - 1 ? "border-b border-[var(--line)]" : ""
-              }`}
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-[12.5px] text-[var(--bone)]">{dept.name}</p>
-                <p className="mono text-[8px] text-[var(--dim)] mt-0.5">
-                  HEAD: {dept.head}
-                </p>
-              </div>
-              <span className="mono text-[8px] text-[var(--muted)] shrink-0 ml-4">
-                {dept.status}
-              </span>
+            <div key={dept.name} className={`flex items-center justify-between px-4 py-3 ${i < DEPARTMENTS.length - 1 ? "border-b border-[var(--line)]" : ""}`}>
+              <div className="flex-1 min-w-0"><p className="text-[12.5px] text-[var(--paper)]">{dept.name}</p><p className="mono text-[8px] text-[var(--paper-dark)] mt-0.5">HEAD: {dept.head}</p></div>
+              <span className="mono text-[8px] text-[var(--paper-muted)] shrink-0 ml-4">{dept.status}</span>
             </div>
           ))}
-        </div>
-
-        <div className="mt-8 text-center">
-          <p className="mono text-[9px] text-[var(--dim)]">
-            TO CLOCK IN, CONNECT YOUR WALLET
-          </p>
-          <p className="mono text-[8px] text-[var(--dim)] mt-2">
-            Employment status cannot be guaranteed.
-          </p>
         </div>
       </div>
     </main>

@@ -11,45 +11,43 @@ import { gsap } from "gsap";
 
 export default function DeskPage() {
   const [loaded, setLoaded] = useState(false);
-  const [incidentCount, setIncidentCount] = useState(0);
   const [coffeeLevel, setCoffeeLevel] = useState(81);
 
   useEffect(() => {
     setLoaded(true);
-    setIncidentCount(INCIDENTS.length);
   }, []);
 
   const coffeeStatus =
     COFFEE_LEVELS.find((c) => coffeeLevel >= c.level) ?? COFFEE_LEVELS[COFFEE_LEVELS.length - 1];
 
   return (
-    <main className="min-h-screen flex flex-col">
-      {/* TOP STATUS RAIL */}
-      <StatusRail incidentCount={incidentCount} coffeeLevel={coffeeLevel} />
+    <main className="h-screen flex flex-col overflow-hidden">
+      {/* TOP STATUS RAIL — 7% */}
+      <StatusRail incidentCount={INCIDENTS.length} coffeeLevel={coffeeLevel} />
 
-      {/* MAIN GRID */}
-      <div className="flex-1 grid grid-cols-[200px_1fr_240px] lg:grid-cols-[240px_1fr_280px] border-t border-[var(--line)]">
-        {/* LEFT NAVIGATION */}
-        <nav className="border-r border-[var(--line)] p-4 hidden md:block">
+      {/* MAIN WORKSTATION GRID */}
+      <div className="flex-1 grid grid-cols-[220px_1fr_260px] lg:grid-cols-[260px_1fr_300px] border-t border-[var(--line)] min-h-0">
+        {/* LEFT NAVIGATION — 17% */}
+        <nav className="border-r border-[var(--line)] p-4 overflow-y-auto hidden md:block">
           <div className="space-y-6">
             <div>
-              <h3 className="mono text-[9px] tracking-[0.2em] text-[var(--dim)] mb-2">OPERATIONS</h3>
-              <NavItem href="/desk" label="THE DESK" active />
-              <NavItem href="/incidents" label="MARKET LOG" badge={incidentCount} />
+              <NavHeading>OPERATIONS</NavHeading>
+              <NavItem href="/" label="THE DESK" active />
+              <NavItem href="/incidents" label="MARKET LOG" badge={INCIDENTS.length} />
             </div>
             <div>
-              <h3 className="mono text-[9px] tracking-[0.2em] text-[var(--dim)] mb-2">RECORDS</h3>
+              <NavHeading>RECORDS</NavHeading>
               <NavItem href="/incidents" label="INCIDENTS" />
               <NavItem href="/archives" label="ARCHIVES" />
               <NavItem href="/handbook" label="HANDBOOK" />
             </div>
             <div>
-              <h3 className="mono text-[9px] tracking-[0.2em] text-[var(--dim)] mb-2">PERSONNEL</h3>
+              <NavHeading>PERSONNEL</NavHeading>
               <NavItem href="/employee" label="EMPLOYEE FILE" />
               <NavItem href="/office" label="DIRECTORY" />
             </div>
             <div>
-              <h3 className="mono text-[9px] tracking-[0.2em] text-[var(--dim)] mb-2">SYSTEM</h3>
+              <NavHeading>SYSTEM</NavHeading>
               <NavItem href="/asset" label="ASSET" />
               <NavItem href="/comms" label="COMMS" />
               <NavItem href="/unknown" label="???" />
@@ -57,19 +55,19 @@ export default function DeskPage() {
           </div>
         </nav>
 
-        {/* CENTER — MARKET CONTROL PANEL */}
-        <div className="p-4 lg:p-6">
-          <div className="border border-[var(--line)] rounded-sm bg-[var(--ink)] p-6 lg:p-8">
+        {/* CENTER — MARKET CONTROL PANEL — 56% */}
+        <div className="p-4 lg:p-6 overflow-y-auto">
+          <div className="border border-[var(--line)] bg-[var(--ink)] p-6 lg:p-8">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="font-condensed text-[28px] lg:text-[36px] tracking-[-0.02em] leading-none">
                   MARKET CONTROL
                 </h2>
-                <p className="mono text-[9px] text-[var(--dim)] mt-2">
-                  TERMINAL 01 — DESK 01 — OPERATIONS
+                <p className="mono text-[9px] text-[var(--paper-dark)] mt-2">
+                  TERMINAL 01 · DESK 01 · OPERATIONS
                 </p>
               </div>
-              <div className="mono text-[9px] text-[var(--dim)] text-right">
+              <div className="mono text-[9px] text-[var(--paper-dark)] text-right">
                 <div>STATUS: LIVE</div>
                 <div>SHIFT: ONGOING</div>
               </div>
@@ -79,11 +77,11 @@ export default function DeskPage() {
           </div>
 
           {/* INCIDENT STRIP */}
-          <div className="mt-4 border border-[var(--line)] rounded-sm bg-[var(--ink)] p-4">
+          <div className="mt-4 border border-[var(--line)] bg-[var(--ink)] p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <span className="mono text-[9px] text-[var(--dim)]">LATEST INCIDENT</span>
-                <span className="mono text-[11px] text-[var(--bone)]">
+                <span className="mono text-[9px] text-[var(--paper-dark)]">LATEST INCIDENT</span>
+                <span className="mono text-[11px] text-[var(--paper)]">
                   {INCIDENTS[INCIDENTS.length - 1].id}
                 </span>
               </div>
@@ -94,8 +92,8 @@ export default function DeskPage() {
           </div>
         </div>
 
-        {/* RIGHT — CONTEXT PANEL */}
-        <aside className="border-l border-[var(--line)] p-4 space-y-4 hidden lg:block">
+        {/* RIGHT — OPERATIONAL CONTEXT — 20% */}
+        <aside className="border-l border-[var(--line)] p-4 space-y-4 overflow-y-auto hidden lg:block">
           <CoffeeStatus level={coffeeLevel} status={coffeeStatus} />
           <ManagerInbox messages={MANAGER_MESSAGES.slice(0, 5)} />
         </aside>
@@ -103,12 +101,20 @@ export default function DeskPage() {
 
       {/* MOBILE BOTTOM NAV */}
       <div className="md:hidden border-t border-[var(--line)] flex">
-        <MobileNavItem href="/desk" label="DESK" active />
+        <MobileNavItem href="/" label="DESK" active />
         <MobileNavItem href="/incidents" label="LOG" />
         <MobileNavItem href="/asset" label="ASSET" />
         <MobileNavItem href="/unknown" label="???" />
       </div>
     </main>
+  );
+}
+
+function NavHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="mono text-[9px] tracking-[0.2em] text-[var(--paper-dark)] mb-2">
+      {children}
+    </h3>
   );
 }
 
@@ -127,12 +133,12 @@ function NavItem({
     <Link
       href={href}
       className={`flex items-center justify-between px-2 py-1.5 text-[11px] mono tracking-wider transition-colors ${
-        active ? "text-[var(--bone)]" : "text-[var(--muted)] hover:text-[var(--bone)]"
+        active ? "text-[var(--paper)]" : "text-[var(--paper-muted)] hover:text-[var(--paper)]"
       }`}
     >
       <span>{label}</span>
       {badge !== undefined && (
-        <span className="mono text-[8px] text-[var(--dim)]">{badge}</span>
+        <span className="mono text-[8px] text-[var(--paper-dark)]">{badge}</span>
       )}
     </Link>
   );
@@ -151,7 +157,7 @@ function MobileNavItem({
     <Link
       href={href}
       className={`flex-1 text-center py-3 mono text-[9px] tracking-[0.15em] transition-colors ${
-        active ? "text-[var(--bone)]" : "text-[var(--dim)]"
+        active ? "text-[var(--paper)]" : "text-[var(--paper-dark)]"
       }`}
     >
       {label}

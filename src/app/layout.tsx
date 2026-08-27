@@ -25,7 +25,7 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "THE INTERN",
+  title: "THE INTERN | MCS/87",
   description: "GLOBAL MARKETS. ONE INTERN. HE WASN'T SUPPOSED TO TOUCH ANYTHING.",
 };
 
@@ -34,7 +34,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${sans.variable} ${condensed.variable} ${mono.variable}`}>
-      <body className="grain antialiased">
+      <body className="grain scanline antialiased">
         <SmoothScroll />
         {children}
       </body>

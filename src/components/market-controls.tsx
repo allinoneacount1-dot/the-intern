@@ -3,15 +3,15 @@
 import { useState } from "react";
 
 const CONTROLS = [
-  { label: "PUMP", hover: "FUNCTION UNKNOWN", color: "var(--green)" },
-  { label: "DUMP", hover: "FUNCTION UNKNOWN", color: "var(--red)" },
-  { label: "PRINT", hover: "NOT THE OFFICE PRINTER", color: "var(--amber)" },
-  { label: "RATES", hover: "CAREFUL", color: "var(--blue)" },
-  { label: "LIQUIDATE", hover: "SURE?", color: "var(--red)" },
-  { label: "REVERSE", hover: "TOO LATE", color: "var(--blue)" },
-  { label: "UNDO", hover: "TRYING", color: "var(--amber)" },
-  { label: "SEND IT", hover: "ABSOLUTELY NOT", color: "var(--green)" },
-  { label: "???", hover: "NOT RECOMMENDED", color: "var(--bone)" },
+  { label: "PUMP", hover: "FUNCTION UNKNOWN", color: "var(--green)", width: "1fr" },
+  { label: "DUMP", hover: "FUNCTION UNKNOWN", color: "var(--red)", width: "1fr" },
+  { label: "PRINT", hover: "NOT THE OFFICE PRINTER", color: "var(--amber)", width: "1fr" },
+  { label: "RATES", hover: "CAREFUL", color: "var(--blue)", width: "1fr" },
+  { label: "LIQUIDATE", hover: "SURE?", color: "var(--red)", width: "1fr" },
+  { label: "REVERSE", hover: "TOO LATE", color: "var(--blue)", width: "1fr" },
+  { label: "UNDO", hover: "TRYING", color: "var(--amber)", width: "1fr" },
+  { label: "SEND IT", hover: "ABSOLUTELY NOT", color: "var(--green)", width: "1fr" },
+  { label: "???", hover: "NOT RECOMMENDED", color: "var(--paper)", width: "1fr" },
 ];
 
 export function MarketControls() {
@@ -40,10 +40,10 @@ export function MarketControls() {
           <button
             key={c.label}
             onClick={() => handleClick(c.label)}
-            onMouseEnter={() => setActiveControl(c.hover)}
-            onMouseLeave={() => setActiveControl(null)}
+            onMouseEnter={() => !locked && setActiveControl(c.hover)}
+            onMouseLeave={() => !locked && setActiveControl(null)}
             disabled={locked}
-            className="group relative h-16 lg:h-20 border border-[var(--line)] bg-[var(--ink-2)] hover:border-[var(--line-strong)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="physical-btn h-16 lg:h-20 flex flex-col items-center justify-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <span
               className="mono text-[10px] lg:text-[11px] tracking-[0.15em]"
@@ -51,19 +51,16 @@ export function MarketControls() {
             >
               {c.label}
             </span>
-            <span className="absolute inset-x-0 bottom-1.5 mono text-[7px] text-[var(--dim)] opacity-0 group-hover:opacity-100 transition-opacity">
-              {c.hover}
-            </span>
           </button>
         ))}
       </div>
 
-      {/* status readout */}
+      {/* Status readout bar */}
       <div className="mt-4 min-h-[32px] border border-[var(--line)] bg-[var(--void)] p-3 flex items-center justify-between">
-        <span className="mono text-[9px] text-[var(--dim)]">
+        <span className="mono text-[9px] text-[var(--paper-dim)]">
           {activeControl ?? "AWAITING INPUT…"}
         </span>
-        <span className="mono text-[8px] text-[var(--dim)]">
+        <span className="mono text-[8px] text-[var(--paper-dark)]">
           {locked ? "LOCKED" : "READY"}
         </span>
       </div>
