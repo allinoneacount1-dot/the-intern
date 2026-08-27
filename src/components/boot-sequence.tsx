@@ -36,21 +36,25 @@ const BOOT_LINES = [
   "«Do not touch anything.»",
 ];
 
+const isReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 export function BootSequence({ onComplete }: { onComplete: () => void }) {
-  const [visible, setVisible] = useState(0);
+  const [visible, setVisible] = useState(() =>
+    isReducedMotion() ? BOOT_LINES.length : 0
+  );
+  const [cursor, setCursor] = useState(true);
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      setVisible(BOOT_LINES.length);
+    if (isReducedMotion()) {
       gsap.delayedCall(0.4, onComplete);
       return;
     }
 
     const tl = gsap.timeline();
 
-    // Stagger each line in
     BOOT_LINES.forEach((_, i) => {
       tl.call(
         () => setVisible(i + 1),
@@ -59,7 +63,6 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
       );
     });
 
-    // Fade in container
     tl.fromTo(
       container.current,
       { opacity: 0 },
@@ -67,7 +70,6 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
       0
     );
 
-    // Complete
     tl.call(() => gsap.delayedCall(0.6, onComplete), [], "-=0.2");
 
     const blink = setInterval(() => setCursor((c) => !c), 530);
@@ -80,32 +82,17 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
   return (
     <div
       ref={container}
-      className="fixed inset-0 z-[100] bg-[var(--void)] flex items-center justify-center"
-      style={{ opacity: 0 }}
+      className="h-screen w-screen bg-[var(--ink)] flex items-center justify-center p-8"
     >
-      <div className="max-w-[680px] w-full px-6">
-        <div className="font-mono text-[12px] leading-[1.85]">
-          {BOOT_LINES.slice(0, visible).map((line, i) => (
-            <div
-              key={i}
-              className={line.includes("ERROR") || line.includes("NOT FOUND")
-                ? "text-[var(--red)]"
-                : line.includes("WARNING") || line.includes("SHOULD NOT")
-                  ? "text-[var(--amber)]"
-                  : line.includes("ACCESS GRANTED")
-                    ? "phosphor"
-                    : line.includes("MANAGER") || line.includes("«")
-                      ? "text-[var(--paper)]"
-                      : "text-[var(--paper-dim)]"
-              }
-            >
-              {line || "\u00A0"}
-            </div>
-          ))}
-          {visible < BOOT_LINES.length + 1 && (
-            <span className="animate-blink text-[var(--paper)]">█</span>
-          )}
-        </div>
+      <div className="font-mono text-[var(--paper)] text-[12px] sm:text-[14px] leading-[1.6] whitespace-pre-wrap max-w-[560px]">
+        {BOOT_LINES.slice(0, visible).map((line, i) => (
+          <div key={i}>{line}</div>
+        ))}
+        {visible < BOOT_LINES.length && (
+          <span className="inline-block w-[8px] h-[14px] bg-[var(--paper)] ml-1 align-middle">
+            {cursor && <span className="sr-only">_</span>}
+          </span>
+        )}
       </div>
     </div>
   );
