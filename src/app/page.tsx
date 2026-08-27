@@ -164,4 +164,3 @@ function MobileNavItem({
     </Link>
   );
 }
-const x: string = 42;
