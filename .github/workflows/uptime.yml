@@ -1,0 +1,57 @@
+name: Production Uptime
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  uptime:
+    name: Production Uptime
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check production
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          URL="https://the-intern-snowy.vercel.app/"
+          MARKER="MARKET CONTROL"
+
+          for attempt in 1 2 3; do
+            echo "Attempt ${attempt}/3"
+
+            BODY="$(mktemp)"
+            CODE="$(
+              curl \
+                --silent \
+                --show-error \
+                --location \
+                --connect-timeout 10 \
+                --max-time 20 \
+                --output "$BODY" \
+                --write-out "%{http_code}" \
+                "$URL" || true
+            )"
+
+            if [[ "$CODE" =~ ^2[0-9][0-9]$ ]] && grep -Fq "$MARKER" "$BODY"; then
+              echo "Production healthy: HTTP $CODE + marker found"
+              rm -f "$BODY"
+              exit 0
+            fi
+
+            echo "Attempt failed: HTTP=${CODE}"
+            rm -f "$BODY"
+
+            if [[ "$attempt" -lt 3 ]]; then
+              sleep 10
+            fi
+          done
+
+          echo "Production uptime check failed after 3 attempts"
+          exit 1
