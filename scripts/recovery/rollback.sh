@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# THE INTERN — Guarded Rollback (P5)
-# Default = DRY_RUN. No mutation unless BOTH --execute AND --owner-approved are present.
-# Owner-required destructive recovery; LLM/operator recommendation != authority.
+# THE INTERN — Guarded Rollback (P5 Safety Hardening)
+# Default = DRY_RUN. No mutation unless ALL destructive gates satisfied.
+# Destructive gates: --execute + --owner-approved + --provider-status healthy + production UNHEALTHY + valid previous + identity + no pending
 set -euo pipefail
 
 PROJECT="the-intern"
@@ -11,16 +11,28 @@ MARKER="${RECOVERY_MARKER:-MARKET CONTROL}"
 
 EXECUTE=false
 OWNER_APPROVED=false
+PROVIDER_STATUS="unknown"
 for arg in "$@"; do
   case "$arg" in
     --execute) EXECUTE=true ;;
     --owner-approved) OWNER_APPROVED=true ;;
+    --provider-status) PROVIDER_STATUS="unknown" ;; # placeholder, real parsing in second pass
+    --provider-status=*) PROVIDER_STATUS="${arg#*=}" ;;
     --help|-h)
       cat <<HELP
-Usage: $0 [--execute --owner-approved]
+Usage: $0 [--execute --owner-approved --provider-status healthy|incident|unknown]
 
 Default (no flags): DRY_RUN — no production mutation.
-Requires BOTH --execute AND --owner-approved to attempt rollback.
+Destructive execution requires ALL:
+  --execute
+  --owner-approved
+  --provider-status healthy
+plus: production UNHEALTHY, valid previous production, identity correct, no pending rollback.
+
+Provider classification is operator evidence (https://www.vercel-status.com/):
+  healthy  = provider healthy, regression is application deployment
+  incident = provider incident, DO NOT ROLLBACK
+  unknown  = default, not yet classified — REFUSED
 
 Guarded rollback for Hobby plan: only immediately previous production deployment is eligible.
 Uses: vercel rollback <previous-deployment-id-or-url> --yes
@@ -30,6 +42,33 @@ HELP
       ;;
   esac
 done
+# Second pass to correctly parse --provider-status <value> (space separated)
+# Re-parse with index handling
+EXECUTE=false
+OWNER_APPROVED=false
+PROVIDER_STATUS="unknown"
+ARGS=("$@")
+i=0
+while [[ $i -lt ${#ARGS[@]} ]]; do
+  case "${ARGS[$i]}" in
+    --execute) EXECUTE=true ;;
+    --owner-approved) OWNER_APPROVED=true ;;
+    --provider-status)
+      if [[ $((i+1)) -lt ${#ARGS[@]} ]]; then
+        PROVIDER_STATUS="${ARGS[$((i+1))]}"
+        i=$((i+1))
+      fi
+      ;;
+    --provider-status=*) PROVIDER_STATUS="${ARGS[$i]#*=}" ;;
+  esac
+  i=$((i+1))
+done
+# Validate provider status value
+if [[ "$PROVIDER_STATUS" != "healthy" && "$PROVIDER_STATUS" != "incident" && "$PROVIDER_STATUS" != "unknown" ]]; then
+  echo "REFUSED: invalid --provider-status '$PROVIDER_STATUS' (expected healthy|incident|unknown)"
+  echo "NO MUTATION"
+  exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || echo "$(cd "$SCRIPT_DIR/../.." && pwd)")"
@@ -37,8 +76,16 @@ cd "$PROJECT_ROOT" 2>/dev/null || true
 
 echo "=== Guarded Rollback — ${PROJECT} (${TEAM}) ==="
 echo "Canonical URL: $CANONICAL_URL"
+echo "Provider status: $PROVIDER_STATUS"
 echo "Mode: checking guards..."
 echo ""
+
+# EARLY DOUBLE-GATE VALIDATION (before destructive eligibility)
+if [[ "$EXECUTE" == "true" && "$OWNER_APPROVED" == "false" ]] || [[ "$EXECUTE" == "false" && "$OWNER_APPROVED" == "true" ]]; then
+  echo "REFUSED: double gate not satisfied — both --execute and --owner-approved required (got execute=$EXECUTE owner-approved=$OWNER_APPROVED)"
+  echo "NO MUTATION"
+  exit 1
+fi
 
 # Preflight (read-only)
 echo "--- Preflight ---"
@@ -76,10 +123,6 @@ else
 fi
 echo ""
 
-# Determine if provider incident suspected (heuristic: caller must check status page)
-# We do not auto-detect provider incident; we remind and refuse if health is unclear + caller asserts incident.
-# For guard, we refuse rollback if health is currently HEALTHY (no need).
-
 if [[ -z "${PREVIOUS_DEPLOYMENT:-}" ]] || [[ "$PREVIOUS_DEPLOYMENT" == "UNKNOWN" ]] || [[ "$PREVIOUS_DEPLOYMENT" == "-" ]]; then
   echo "REFUSED: previous production deployment cannot be identified (Hobby requires exactly previous production)."
   echo "Do not target arbitrary historical deployment."
@@ -106,10 +149,6 @@ if [[ "$HEALTH_EXIT" -eq 0 ]]; then
   echo "REFUSED: current production is HEALTHY (HTTP 2xx + marker '${MARKER}' found) — rollback not warranted."
   echo "If provider incident suspected, check https://www.vercel-status.com/ and do NOT rollback."
   echo "NO MUTATION"
-  # For dry-run mode, we still want to show planned action but not execute; treat healthy as refusal even for dry-run guard test
-  # However per spec, dry-run should show planned action without mutation; we already showed it above.
-  # Exit 1 signals guard refused; for default DRY_RUN without flags we exit 0 earlier with planned action.
-  # To keep DRY_RUN as non-error, only refuse health guard when flags request execution.
   if [[ "$EXECUTE" == "true" && "$OWNER_APPROVED" == "true" ]]; then
     exit 1
   else
@@ -123,11 +162,11 @@ fi
 echo "Planned rollback action: vercel rollback ${PREVIOUS_DEPLOYMENT} --yes"
 echo ""
 
-# Default dry-run guard
+# Default dry-run guard (no flags)
 if [[ "$EXECUTE" != "true" || "$OWNER_APPROVED" != "true" ]]; then
   echo "DRY_RUN — NO PRODUCTION MUTATION"
-  echo "To execute (owner-required): $0 --execute --owner-approved"
-  echo "Missing flags: execute=${EXECUTE} owner-approved=${OWNER_APPROVED} — both required."
+  echo "To execute (owner-required): $0 --execute --owner-approved --provider-status healthy"
+  echo "Missing flags: execute=${EXECUTE} owner-approved=${OWNER_APPROVED} provider-status=${PROVIDER_STATUS} — all required for execution."
   if [[ "$EXECUTE" == "true" || "$OWNER_APPROVED" == "true" ]]; then
     echo "REFUSED: double gate not satisfied — NO MUTATION"
     exit 1
@@ -135,13 +174,24 @@ if [[ "$EXECUTE" != "true" || "$OWNER_APPROVED" != "true" ]]; then
   exit 0
 fi
 
-# Both flags present — final checks before destructive mutation
-echo "Both execution gates present (--execute --owner-approved). Performing final guards..."
+# Both execution gates present — enforce provider guard
+if [[ "$PROVIDER_STATUS" == "unknown" ]]; then
+  echo "REFUSED: provider status unknown — explicit --provider-status healthy required for destructive execution"
+  echo "Check https://www.vercel-status.com/ and classify provider before rollback."
+  echo "NO MUTATION"
+  exit 1
+fi
+if [[ "$PROVIDER_STATUS" == "incident" ]]; then
+  echo "REFUSED: provider incident — rollback cannot fix provider outage, DO NOT ROLLBACK"
+  echo "See docs/RECOVERY.md class B: WAIT + RECHECK + DOCUMENT"
+  echo "NO MUTATION"
+  exit 1
+fi
+# PROVIDER_STATUS == healthy continues
 
-# Re-check provider correlation reminder — require operator to have checked status
-echo "Reminder: verify https://www.vercel-status.com/ — if Vercel provider incident, ABORT (rollback cannot fix provider outage)."
-# We do not auto-abort on provider incident without explicit signal; operator must abort manually.
-# For safety, we still refuse if health check flaps? No.
+# Final checks before destructive mutation — both execution gates + provider healthy
+echo "Both execution gates present (--execute --owner-approved) with provider-status healthy. Performing final guards..."
+echo "Reminder: verify https://www.vercel-status.com/ — provider healthy confirmed."
 
 echo "Executing: vercel rollback ${PREVIOUS_DEPLOYMENT} --yes"
 echo "Hobby limitation: only previous production (${PREVIOUS_DEPLOYMENT}) is rollback-eligible."
