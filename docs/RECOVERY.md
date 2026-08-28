@@ -3,8 +3,9 @@
 > Verified 2026-08-28 — P5_RECOVERY
 > Repo: `allinoneacount1-dot/the-intern` | Project: `the-intern` (`prj_fkVTmCDIsdOgL2NbvVZd5u3EmxUF`, team `mrmacro-s-projects`)
 > Class: **A_STATELESS** (no DB, no auth, no wallet, no stateful backend)
-> Production: `https://the-intern-snowy.vercel.app/` → `the-intern-313d9xvg4-mrmacro-s-projects.vercel.app` (`dpl_5GX9B3MBZN4uNHjAbFc5vKTrzDkM`)
-> Previous production (Hobby-eligible): `the-intern-dkvv1rb8v-mrmacro-s-projects.vercel.app` (`dpl_BzwADknoGiQapnWwys8g6XDYydVH`) @ `c0abd05`
+> Production: `https://the-intern-snowy.vercel.app/` → `the-intern-q7oavrswr-mrmacro-s-projects.vercel.app` (`dpl_5GX9B3MBZN4uNHjAbFc5vKTrzDkM` via e54dccc)
+> Previous production (Hobby-eligible): `the-intern-313d9xvg4-mrmacro-s-projects.vercel.app` (`dpl_BzwADknoGiQapnWwys8g6XDYydVH`) @ `5e69346`
+> Safety hardening: 2026-08-28 — provider-status explicit, early double-gate
 > Node: `22.x` (engines `22.x`, runtime `nodejs22.x`)
 > Plan: **HOBBY**
 > P5 baseline: `2026-08-28T15:00Z` — `rollback status --yes: No deployment rollback in progress`, `promote status --yes: No deployment promotion in progress`, health `HEALTHY (HTTP 200 + MARKET CONTROL)`
@@ -44,7 +45,7 @@ After `vercel rollback`:
 - **auto-assignment of production domains becomes disabled** (verified via `vercel rollback status` docs)
 - Push to `main` does NOT auto-publish while in rollback state
 
-Restoration requires owner: `vercel promote <verified-fixed-deployment> --yes` + `vercel promote status --yes`.
+Restoration requires owner: `vercel promote <verified-fixed-deployment> --yes` + `vercel promote status --yes`. Auto-assignment disabled is verified via `vercel rollback status` docs and remains until promote.
 
 ## 6. Fix-Forward / Reconciliation
 
@@ -77,7 +78,7 @@ Rollback and Git source must not diverge indefinitely.
 |---|---|---|
 | Health | `scripts/recovery/production-health.sh` | deterministic read-only: `curl --location --connect-timeout 10 --max-time 20` ×3, `sleep 10`, success `HTTP 2xx + grep -Fq MARKET CONTROL`, exit `0` healthy / `1` unhealthy, respects `RECOVERY_MARKER` override for drill |
 | Preflight | `scripts/recovery/preflight.sh` | read-only: timestamp, URL health, `vercel ls --json` (production filter), current/previous deployment + SHA, `vercel rollback status --yes`, `vercel promote status --yes`, `git rev-parse origin/main`, provider reminder; outputs `RECOVERY_PREFLIGHT` block; no secrets |
-| Rollback | `scripts/recovery/rollback.sh` | **default DRY_RUN** — no mutation; prints preflight, identity, health evidence, planned `vercel rollback <previous> --yes`; execution requires **both** `--execute --owner-approved`; refuses if provider incident, healthy, previous unknown, identity mismatch, rollback pending; post-rollback reminds promote |
+| Rollback | `scripts/recovery/rollback.sh` | **default DRY_RUN** — no mutation; early double-gate (`--execute` XOR `--owner-approved` → REFUSED); execution requires **ALL** `--execute --owner-approved --provider-status healthy` + production UNHEALTHY + valid previous + identity + no pending; `unknown`/`incident` provider → REFUSED (machine-enforced); healthy production → REFUSED; planned `vercel rollback <previous> --yes` (Hobby: previous only, verified `vercel rollback <id> --yes`); post-rollback reminds promote |
 
 No secrets printed. No `AUTO_*`.
 
@@ -110,12 +111,14 @@ Not one lucky request. After real recovery require:
 - Rollback disables auto-domain assignment until promote
 - Class A stateless: minimal function/runtime logs expected
 
-## 13. Verification (P5 drill 2026-08-28)
+## 13. Verification (P5 drill 2026-08-28 + safety hardening 2026-08-28)
 
-- `production-health.sh` on `main`: **PASS** `HTTP 200 + marker`
-- `RECOVERY_MARKER=__P5_NON_EXISTENT_MARKER__`: **FAIL** after 3 attempts (expected)
-- Restore marker: **PASS**
-- `./scripts/recovery/rollback.sh` (no flags): **DRY_RUN, NO MUTATION**, production ID unchanged (`dpl_5GX9B3MBZN4uNHjAbFc5vKTrzDkM`), domain unchanged, rollback status unchanged
-- `./scripts/recovery/rollback.sh --execute`: **REFUSED** (double gate)
-- `./scripts/recovery/rollback.sh --owner-approved`: **REFUSED** (double gate)
-- Never ran `--execute --owner-approved` on healthy production
+- `production-health.sh` on `main`: **PASS** `HTTP 200 + marker` (health) / **FAIL** with `RECOVERY_MARKER=__P5_NON_EXISTENT_MARKER__` after 3 attempts (expected) / restore **PASS**
+- `./scripts/recovery/rollback.sh` (no flags): **DRY_RUN, NO MUTATION**, production `q7oavrswr` unchanged, domain unchanged, `rollback status: No deployment rollback in progress`
+- `--execute` only: **REFUSED** `double gate not satisfied` NO MUTATION exit 1 (early)
+- `--owner-approved` only: **REFUSED** `double gate not satisfied` NO MUTATION exit 1 (early)
+- Simulated UNHEALTHY (`RECOVERY_MARKER=__P5_NON_EXISTENT_MARKER__`) + `--execute --owner-approved` (default `unknown`): **REFUSED** `provider status unknown` NO MUTATION exit 1
+- Simulated UNHEALTHY + `--execute --owner-approved --provider-status incident`: **REFUSED** `provider incident` NO MUTATION exit 1
+- **Never ran** `--execute --owner-approved --provider-status healthy` during drill (would be only valid destructive path)
+- Hobby rollback semantics verified: `vercel --version 59.4.0`, `vercel rollback <previous-deployment> --yes` (see `vercel rollback --help`), previous = `the-intern-313d9xvg4` for current `q7oavrswr`
+- Docs updated to enforce provider-healthy classification for destructive execution
