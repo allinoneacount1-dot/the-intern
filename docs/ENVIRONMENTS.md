@@ -37,7 +37,7 @@ If future discovery finds state/credential, STOP this classification and re-repo
 | Vercel identity | `oxwebthree-7231` |
 | Vercel team | `mrmacro-s-projects` (`team_24xZRsYErTeKL6qmbZphBS6g`) |
 | Vercel project | `the-intern` (`prj_fkVTmCDIsdOgL2NbvVZd5u3EmxUF`) |
-| Vercel framework | `nextjs`, Node `24.x`, region `iad1` |
+| Vercel framework | `nextjs`, Node `22.x` (verified via `engines: 22.x` — build log: `Skipping build cache since Node.js version changed from "24.x" to "22.x"` + `Warning: Due to "engines": { "node": "22.x" } ... Node.js Version "22.x" will be used instead`), region `iad1` |
 | Git link (verified) | `type: github, org: allinoneacount1-dot, repo: the-intern, repoId: 1348720039, productionBranch: main` — connected 2026-08-28 via `vercel git connect` |
 | Canonical production domains | `the-intern-snowy.vercel.app`, `the-intern-mrmacro-s-projects.vercel.app` (auto aliases) |
 
